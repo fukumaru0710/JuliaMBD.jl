@@ -3,6 +3,8 @@ module JuliaMBD
 import DifferentialEquations
 import Plots
 
+export toJulia
+
 include("TypeDef.jl")
 
 include("Port.jl")
@@ -28,5 +30,18 @@ include("predefined_blocks/OutBlock.jl")
 
 include("SystemBlock.jl")
 include("SimMacro.jl")
+
+include("xmltojulia/xmltojulia.jl")
+
+import .xmlToJulia
+
+function toJulia(s)
+    #xmlToJulia.toJulia(s)
+
+    #expr = Meta.parse(xmlToJulia.toJulia(s))
+    #eval(expr)
+    
+    Meta.parse(xmlToJulia.toJulia(s))
+end
 
 end

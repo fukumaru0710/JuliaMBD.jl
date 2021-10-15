@@ -9,6 +9,7 @@ EzXML = "8f5d6c58-4d21-5cfd-889c-e3ad7ee6a615"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 
 [compat]
+EzXML = "1"
 julia = "1.6"
 
 [extras]

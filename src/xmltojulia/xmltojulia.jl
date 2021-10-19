@@ -1,7 +1,7 @@
 module xmlToJulia
 
     using EzXML
-    export toJulia, @xmlmodel
+    export toJulia
 
     Parent = Dict()
     BlockLabel = Dict()
@@ -284,15 +284,6 @@ module xmlToJulia
         str
     end
 
-    macro xmlmodel(fn)
-        expr = quote
-            f = open($fn, "r")
-            data = read(f, String)
-            close(f)
-            expr = Meta.parse(xmlToJulia.toJulia(data))
-            eval(expr)
-        end
-    esc(expr)
-    end
+    
 end
 

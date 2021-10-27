@@ -78,6 +78,7 @@ module xmlToJulia
             Parent[id] = data["parent"]
             if haskey(Type, Parent[id])
                 if Type[Parent[id]] == "add"
+                    #new_id = "a" * id
                     newid = replace.(id, "-"=>"")
                     push!(AddChild[Parent[id]], newid)
                 end
@@ -242,7 +243,13 @@ module xmlToJulia
         init()
         xml = parsexml(s)
         mx = xml.root
-        ro = elements(mx)[1]
+        if haskey(mx, "dx")
+            ro = elements(mx)[1]
+        else
+            dia = elements(mx)[1]
+            mxg = elements(dia)[1]
+            ro = elements(mxg)[1]
+        end
 
         for cell in eachelement(ro)
             GetData(cell)

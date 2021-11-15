@@ -1,6 +1,9 @@
 module xmlToJulia
 
     using EzXML
+    using Base64
+    using Inflate
+    using HTTP
     export toJulia
 
     Parent = Dict()
@@ -78,7 +81,6 @@ module xmlToJulia
             Parent[id] = data["parent"]
             if haskey(Type, Parent[id])
                 if Type[Parent[id]] == "add"
-                    #new_id = "a" * id
                     newid = replace.(id, "-"=>"")
                     push!(AddChild[Parent[id]], newid)
                 end
@@ -148,7 +150,7 @@ module xmlToJulia
             #AddBlock上の演算子の処理
             #println("@connect " * BlockLabel[Source[Id]] * " => " * BlockLabel[Parent[Target[Id]]] * " " * Value[Target[Id]])
             newtarget = replace.(Target[Id], "-"=>"")
-            push!(Connect, BlockLabel[Source[Id]] * " => " * newtarget)
+            push!(Connect, BlockLabel[Source[Id]] * " => " * "a" * newtarget)
             #println("@connect " * BlockLabel[Source[Id]] * " => " * Target[Id])
         end
     end
@@ -205,7 +207,7 @@ module xmlToJulia
                     addtext = addtext * "inport[" * string(length(Add[Id])-i+1) * "]:"
                     #print("inport[" * string(length(Add[Id])-i+1) * "]:")
                     ##print("In" * string(i) * " ")
-                    addtext = addtext * AddChild[Id][i] * " "
+                    addtext = addtext * "a" * AddChild[Id][i] * " "
                     #print(AddChild[Id][i] * " ")
                 end
                 #print(addtext)
@@ -246,9 +248,22 @@ module xmlToJulia
         if haskey(mx, "dx")
             ro = elements(mx)[1]
         else
-            dia = elements(mx)[1]
-            mxg = elements(dia)[1]
-            ro = elements(mxg)[1]
+            for com in eachelement(mx)
+                global mxgraph = nodecontent(com)
+            end
+            dec = base64decode(mxgraph)
+            if dec == UInt8[]
+                dia = elements(mx)[1]
+                mxg = elements(dia)[1]
+                ro = elements(mxg)[1]
+            else
+                dec_inflate = inflate(dec)
+                dec_string = String(dec_inflate)
+                dec_uris = HTTP.URIs.unescapeuri(dec_string)
+                xml_dec = parsexml(dec_uris)
+                mx_dec = xml_dec.root
+                ro = elements(mx_dec)[1]
+            end
         end
 
         for cell in eachelement(ro)

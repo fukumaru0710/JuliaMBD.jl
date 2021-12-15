@@ -7,7 +7,6 @@ using Plots
     f = open("DCMtest.xml", "r")
     data = read(f, String)
     close(f)
-    #expr = Meta.parse(xmlToJulia.toJulia(data))
     println(toJulia(data))
 end
 
@@ -155,4 +154,47 @@ end
     sol = @simulate(m, tspan=(0.0, 10.0), scope=(omega, i_M, v_M))
     sol.graph
 
+end
+
+@testset "suion.jl" begin
+    @xmlmodel "suion.xml"
+end
+
+@testset "ProductBlockTest" begin
+    @model MotorDriver begin
+        @parameter alpha_i
+        
+        @blk In1 = InBlock()
+        @blk In2 = InBlock()
+        @blk In3 = InBlock()
+        @blk Gain = GainBlock(1/100)
+        @blk Gain1 = GainBlock(alpha_i)
+        #@blk Add = AddBlock([:+, :*]) inport[1]:in1 inport[2]:in2
+        @blk Product = ProductBlock() inport[1]:in1 inport[2]:in2
+        @blk Out = OutBlock()
+        @blk Out1 = OutBlock()
+        
+        @connect In1 => in1
+        @connect In2 => Gain
+        @connect Gain => in2
+        @connect Product => Out
+        @connect In3 => Gain1
+        @connect Gain1 => Out1
+    end
+        
+    @model MDTest begin
+        @parameter alpha_i u_M_d i_M_d Vs
+        
+        @blk Con = ConstantBlock(Vs)
+        @blk Ramp = RampBlock(slope=u_M_d, starttime=0, initialoutput=0)
+        @blk Ramp1 = RampBlock(slope=i_M_d, starttime=0, initialoutput=0)
+        @blk MD = MotorDriver(alpha_i=alpha_i) inport[1]:Vs inport[2]:u_M inport[3]:i_M outport[1]:v_A outport[2]:v_i
+        
+        @connect Con => Vs
+        @connect Ramp => u_M
+        @connect Ramp1 => i_M
+    end
+    m = MDTest(alpha_i=5/37.5, u_M_d=10, i_M_d=3, Vs=24)
+    sol = @simulate(m, tspan=(0.0, 10.0), scope=(v_A, Ramp, v_i, Ramp1))
+    sol.graph
 end

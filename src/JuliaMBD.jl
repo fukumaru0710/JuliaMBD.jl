@@ -17,6 +17,7 @@ include("predefined_blocks/ModBlock.jl")
 include("predefined_blocks/DivisionBlock.jl")
 include("predefined_blocks/TrigonometricFunctionBlock.jl")
 include("predefined_blocks/MathFunctionBlock.jl")
+include("predefined_blocks/ProductBlock.jl")
 
 include("predefined_blocks/ConstantBlock.jl")
 include("predefined_blocks/StepBlock.jl")

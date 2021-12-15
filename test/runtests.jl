@@ -198,3 +198,7 @@ end
     sol = @simulate(m, tspan=(0.0, 10.0), scope=(v_A, Ramp, v_i, Ramp1))
     sol.graph
 end
+
+@testset "MotorDriverProductBlock.jl" begin
+    @xmlmodel "MotorDriverP.xml"
+end

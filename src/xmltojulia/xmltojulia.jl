@@ -18,6 +18,8 @@ module xmlToJulia
     Value = Dict()
     Add = Dict()
     AddChild = Dict()
+    Product = Dict()
+    ProductChild = Dict()
     parameter = Dict()
     blk = Dict()
     connect = Dict()
@@ -76,6 +78,10 @@ module xmlToJulia
             if Type[id] == "sub"
                 parameter[id] = data["parameter"]
             end
+            if Type[id] == "product"
+                Product[id] = []
+                ProductChild[id] = []
+            end
         end
         if haskey(data, "parent")
             Parent[id] = data["parent"]
@@ -83,6 +89,10 @@ module xmlToJulia
                 if Type[Parent[id]] == "add"
                     newid = replace.(id, "-"=>"")
                     push!(AddChild[Parent[id]], newid)
+                end
+                if Type[Parent[id]] == "product"
+                    newid = replace.(id, "-"=>"")
+                    push!(ProductChild[Parent[id]], newid)
                 end
             end
         end
@@ -147,7 +157,7 @@ module xmlToJulia
             push!(Connect, BlockLabel[Source[Id]] * " => " * BlockLabel[Target[Id]])
             #println("@connect " * BlockLabel[Source[Id]] * " => " * BlockLabel[Target[Id]])
         else
-            #AddBlock上の演算子の処理
+            #AddBlock、ProductBlock上の演算子の処理(+,-,・につなぐのでtargetにはならない)
             #println("@connect " * BlockLabel[Source[Id]] * " => " * BlockLabel[Parent[Target[Id]]] * " " * Value[Target[Id]])
             newtarget = replace.(Target[Id], "-"=>"")
             push!(Connect, BlockLabel[Source[Id]] * " => " * "a" * newtarget)
@@ -213,6 +223,14 @@ module xmlToJulia
                 #print(addtext)
                 push!(Blk, addtext)
             end
+            if Type[Id] == "product"
+                producttext = BlockLabel[Id] * " = " * "ProductBlock() "
+                for i in 2:-1:1
+                    producttext = producttext * "inport[" * string(3-i) * "]:"
+                    producttext = producttext * "a" * ProductChild[Id][i] * " "
+                end
+                push!(Blk, producttext)
+            end
             #println()
         end
     end
@@ -230,6 +248,8 @@ module xmlToJulia
         global Value = Dict()
         global Add = Dict()
         global AddChild = Dict()
+        global Product = Dict()
+        global ProductChild = Dict()
         global parameter = Dict()
         global blk = Dict()
         global connect = Dict()

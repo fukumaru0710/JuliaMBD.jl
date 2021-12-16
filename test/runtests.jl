@@ -227,3 +227,19 @@ end
     sol.graph    
 end
 
+@testset "ModTest.jl" begin
+    @xmlmodel "ModTest.xml"
+
+    @model PulseGeneratorTest begin
+        @parameter m alpha_P d_P_d
+
+        @blk Ramp = RampBlock(slope=d_P_d, starttime=0, initialoutput=-50)
+        @blk PG = PulseGenerator(m=m, alpha_P=alpha_P)
+
+        @connect Ramp => PG
+    end
+    m = PulseGeneratorTest(m=8, alpha_P=100/(2^8-1), d_P_d=5)
+    sol = @simulate(m, tspan=(0.0, 70.0), scope=(Ramp, PG))
+    sol.graph 
+end
+

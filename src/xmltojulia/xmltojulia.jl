@@ -18,7 +18,6 @@ module xmlToJulia
     Value = Dict()
     Add = Dict()
     AddChild = Dict()
-    Product = Dict()
     ProductChild = Dict()
     parameter = Dict()
     blk = Dict()
@@ -26,6 +25,7 @@ module xmlToJulia
     UpperLimit = Dict()
     LowerLimit = Dict()
     QuantizationInterval = Dict()
+    ModChild = Dict()
     #Option = Dict()
 
     ModelName = []
@@ -82,7 +82,6 @@ module xmlToJulia
                 parameter[id] = data["parameter"]
             end
             if Type[id] == "product"
-                Product[id] = []
                 ProductChild[id] = []
             end
             if Type[id] == "saturation"
@@ -91,6 +90,9 @@ module xmlToJulia
             end
             if Type[id] == "quantizer"
                 QuantizationInterval[id] = []
+            end
+            if Type[id] == "mod"
+                ModChild[id] = []
             end
         end
         if haskey(data, "parent")
@@ -103,6 +105,10 @@ module xmlToJulia
                 if Type[Parent[id]] == "product"
                     newid = replace.(id, "-"=>"")
                     push!(ProductChild[Parent[id]], newid)
+                end
+                if Type[Parent[id]] == "mod"
+                    newid = replace.(id, "-"=>"")
+                    push!(ModChild[Parent[id]], newid)
                 end
             end
         end
@@ -278,6 +284,14 @@ module xmlToJulia
                 quantizertext = quantizertext * ")"
                 push!(Blk, quantizertext)
             end
+            if Type[Id] == "mod"
+                modtext = BlockLabel[Id] * " = " * "ModBlock() "
+                for i in 2:-1:1
+                    modtext = modtext * "inport[" * string(3-i) * "]:"
+                    modtext = modtext * "a" * ModChild[Id][3-i] * " "
+                end
+                push!(Blk, modtext)
+            end
         end
     end
 
@@ -294,7 +308,6 @@ module xmlToJulia
         global Value = Dict()
         global Add = Dict()
         global AddChild = Dict()
-        global Product = Dict()
         global ProductChild = Dict()
         global parameter = Dict()
         global blk = Dict()
@@ -302,6 +315,7 @@ module xmlToJulia
         global UpperLimit = Dict()
         global LowerLimit = Dict()
         global QuantizationInterval = Dict()
+        global ModChild = Dict()
         #Option = Dict()
 
         global ModelName = []

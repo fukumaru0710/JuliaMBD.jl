@@ -202,3 +202,28 @@ end
 @testset "MotorDriverProductBlock.jl" begin
     @xmlmodel "MotorDriverP.xml"
 end
+
+@testset "SaturationTest.jl" begin
+    @xmlmodel "SaturationTest.xml"
+end
+
+@testset "QuantizerTest.jl" begin
+    f = open("QuantizerTest.xml", "r")
+    data = read(f, String)
+    close(f)
+    println(toJulia(data))
+    @xmlmodel "QuantizerTest.xml"
+
+    @model ADConverterTest begin
+        @parameter V_A_min V_A_max alpha_A
+
+        @blk Ramp = RampBlock(slope=1, starttime=0, initialoutput=5)
+        @blk ADC = ADConverter(V_A_min=V_A_min, V_A_max=V_A_max, alpha_A=alpha_A)
+
+        @connect Ramp => ADC
+    end
+    m = ADConverterTest(V_A_min=0, V_A_max=0, alpha_A=(2^10 - 1)/5)
+    sol = @simulate(m, tspan=(0.0, 10.0), scope=(Ramp, ADC))
+    sol.graph    
+end
+

@@ -23,6 +23,9 @@ module xmlToJulia
     parameter = Dict()
     blk = Dict()
     connect = Dict()
+    UpperLimit = Dict()
+    LowerLimit = Dict()
+    QuantizationInterval = Dict()
     #Option = Dict()
 
     ModelName = []
@@ -82,6 +85,13 @@ module xmlToJulia
                 Product[id] = []
                 ProductChild[id] = []
             end
+            if Type[id] == "saturation"
+                UpperLimit[id] = []
+                LowerLimit[id] = []
+            end
+            if Type[id] == "quantizer"
+                QuantizationInterval[id] = []
+            end
         end
         if haskey(data, "parent")
             Parent[id] = data["parent"]
@@ -114,6 +124,21 @@ module xmlToJulia
                 Source[id] = data["source"]
             end
         end
+        if haskey(data, "upperlimit")
+            if data["upperlimit"] != ""
+                UpperLimit[id] = data["upperlimit"]
+            end
+        end
+        if haskey(data, "lowerlimit")
+            if data["lowerlimit"] != ""
+                LowerLimit[id] = data["lowerlimit"]
+            end
+        end
+        if haskey(data, "quantizationinterval")
+            if data["quantizationinterval"] != ""
+                QuantizationInterval[id] = data["quantizationinterval"]
+            end
+        end
     end
 
     function GetDataChild(data, id)
@@ -138,10 +163,10 @@ module xmlToJulia
             end
             if Type[Id] == "integrator"
                 #Option = Dict()
-                if data["initialcondition"] != ""
-                    Option["initialcondition"] = data["initialcondition"]
+                #if data["initialcondition"] != ""
+                #    Option["initialcondition"] = data["initialcondition"]
                     #println("op")
-                end
+                #end
             end
         end
     end
@@ -227,11 +252,32 @@ module xmlToJulia
                 producttext = BlockLabel[Id] * " = " * "ProductBlock() "
                 for i in 2:-1:1
                     producttext = producttext * "inport[" * string(3-i) * "]:"
-                    producttext = producttext * "a" * ProductChild[Id][i] * " "
+                    producttext = producttext * "a" * ProductChild[Id][3-i] * " "
                 end
                 push!(Blk, producttext)
             end
-            #println()
+            if Type[Id] == "saturation"
+                saturationtext = BlockLabel[Id] * " = " * "SaturationBlock("
+                if UpperLimit[Id] != Any[]
+                    saturationtext = saturationtext * "upperlimit=" * UpperLimit[Id]
+                    if LowerLimit[Id] != Any[]
+                        saturationtext = saturationtext * ", "
+                    end
+                end
+                if LowerLimit[Id] != Any[]
+                    saturationtext = saturationtext * "lowerlimit=" * LowerLimit[Id]
+                end
+                saturationtext = saturationtext * ")"
+                push!(Blk, saturationtext)
+            end
+            if Type[Id] == "quantizer"
+                quantizertext = BlockLabel[Id] * " = " * "QuantizerBlock("
+                if QuantizationInterval[Id] != Any[]
+                    quantizertext = quantizertext * "quantizationinterval=" * QuantizationInterval[Id]
+                end
+                quantizertext = quantizertext * ")"
+                push!(Blk, quantizertext)
+            end
         end
     end
 
@@ -253,6 +299,9 @@ module xmlToJulia
         global parameter = Dict()
         global blk = Dict()
         global connect = Dict()
+        global UpperLimit = Dict()
+        global LowerLimit = Dict()
+        global QuantizationInterval = Dict()
         #Option = Dict()
 
         global ModelName = []

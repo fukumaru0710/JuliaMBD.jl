@@ -15,12 +15,12 @@ module xmlToJulia
     Edge = Dict()
     Target = Dict()
     Source = Dict()
-    Value = Dict()
-    Add = Dict()
     AddChild = Dict()
     ProductChild = Dict()
     parameter = Dict()
     blk = Dict()
+    Inblk = Dict()
+    Outblk = Dict()
     connect = Dict()
     UpperLimit = Dict()
     LowerLimit = Dict()
@@ -31,6 +31,8 @@ module xmlToJulia
     ModelName = []
     Parameter = []
     Blk = []
+    InBlock = []
+    OutBlock = []
     Connect = []
 
     function GetId(data)
@@ -74,11 +76,21 @@ module xmlToJulia
         end
         if haskey(data, "type")
             Type[id] = data["type"]
+            if Type[id] == "input"
+                if haskey(data, "number")
+                    Inblk[string(data["number"])] = BlockLabel[id]
+                end
+            end
+            if Type[id] == "output"
+                if haskey(data, "number")
+                    Outblk[string(data["number"])] = BlockLabel[id]
+                end
+            end
             if Type[id] == "add"
-                Add[id] = []
+                #Add[id] = []
                 AddChild[id] = []
             end
-            if Type[id] == "sub"
+            if Type[id] == "model"
                 parameter[id] = data["parameter"]
             end
             if Type[id] == "product"
@@ -100,14 +112,17 @@ module xmlToJulia
             if haskey(Type, Parent[id])
                 if Type[Parent[id]] == "add"
                     newid = replace.(id, "-"=>"")
+                    newid = "a" * newid
                     push!(AddChild[Parent[id]], newid)
                 end
                 if Type[Parent[id]] == "product"
                     newid = replace.(id, "-"=>"")
+                    newid = "a" * newid
                     push!(ProductChild[Parent[id]], newid)
                 end
                 if Type[Parent[id]] == "mod"
                     newid = replace.(id, "-"=>"")
+                    newid = "a" * newid
                     push!(ModChild[Parent[id]], newid)
                 end
             end
@@ -115,11 +130,8 @@ module xmlToJulia
         if haskey(data, "vertex")
             Vertex[id] = data["vertex"]
         end
-        if haskey(data, "value")
-            Value[id] = data["value"]
-            if Type[Parent[id]] == "add"
-                push!(Add[Parent[id]], Value[id])
-            end
+        if haskey(data, "parameter")
+            parameter[id] = data["parameter"]
         end
         if haskey(data, "edge")
             Edge[id] = data["edge"]
@@ -159,12 +171,12 @@ module xmlToJulia
         end
     end
 
-    function Parse(data, Id, Option)
+    function Parse(data, Id)
         if haskey(data, "edge")
             ParseEdge(data, Id)
         end
         if haskey(data, "type")
-            if Type[Id] == "sub"
+            if Type[Id] == "model"
                 push!(ModelName, BlockLabel[Id])
             end
             if Type[Id] == "integrator"
@@ -177,9 +189,9 @@ module xmlToJulia
         end
     end
 
-    function ParseChild(data, Id, Option)
+    function ParseChild(data, Id)
         if haskey(data, "vertex")
-            ParseVertex(data, Id, Option)
+            ParseVertex(data, Id)
         end
     end
 
@@ -196,69 +208,46 @@ module xmlToJulia
         end
     end
 
-    function ParseVertex(data, Id, Option)
+    function ParseVertex(data, Id)
         if haskey(Style[Id], "text")
-            #println(Label[Id] * " text")
-        elseif Type[Id] == "sub"
+        elseif Type[Id] == "model"
             push!(Parameter, parameter[Id])
-            #println("@parameter " * parameter[Id])
         else
-            #print(Type[Id] * "    ")
-            #print("@blk ")
-            if Type[Id] == "input"
+            #=if Type[Id] == "input"
                 push!(Blk, BlockLabel[Id] * " = " * "InBlock()")
-                #print(BlockLabel[Id] * " = " * "InBlock()")
             end
             if Type[Id] == "output"
                 push!(Blk, BlockLabel[Id] * " = " * "OutBlock()")
-                #print(BlockLabel[Id] * " = " * "OutBlock()")
-            end
+            end=#
             if Type[Id] == "constant"
-                push!(Blk, BlockLabel[Id] * " = " * "ConstantBlock(" * Label[Id] * ")")
-                #print(BlockLabel[Id] * " = " * "ConstantBlock(" * Label[Id] * ")")
+                push!(Blk, BlockLabel[Id] * " = " * "ConstantBlock(" * parameter[Id] * ")")
             end
             if Type[Id] == "gain"
-                push!(Blk, BlockLabel[Id] * " = " * "GainBlock(" * Label[Id] * ")")
-                #print(BlockLabel[Id] * " = " * "GainBlock(" * Label[Id] * ")")
+                push!(Blk, BlockLabel[Id] * " = " * "GainBlock(" * parameter[Id] * ")")
             end
             if Type[Id] == "integrator"
                 integratortext = BlockLabel[Id] * " = " * "IntegratorBlock("
                 #push!(Blk, BlockLabel[Id] * " = " * "IntegratorBlock(" * ")")
                 #print(BlockLabel[Id] * " = " * "IntegratorBlock(" * ")")
-                if haskey(Option, "initialcondition")
+                #=if haskey(Option, "initialcondition")
                     integratortext = integratortext * "initialcondition=" * Option["initialcondition"]
                 end
                 integratortext = integratortext * ")"
-                push!(Blk, integratortext)
+                push!(Blk, integratortext)=#
             end
             if Type[Id] == "add"
-                addtext = BlockLabel[Id] * " = " * "AddBlock(["
-                #print(BlockLabel[Id] * " = " * "AddBlock([")
-                for i in length(Add[Id]):-1:1
-                    addtext = addtext * ":" * Add[Id][i]
-                    #print(":" * Add[Id][i])
-                    if i != 1
-                        addtext = addtext * ", "
-                        #print(", ")
-                    end
+                addtext = BlockLabel[Id] * " = " * "AddBlock() "
+                for i in 2:-1:1
+                    addtext = addtext * "inport[" * string(3-i) * "]:"
+                    addtext = addtext * AddChild[Id][3-i] * " "
                 end
-                addtext = addtext * "]) "
-                #print("]) ")
-                for i in length(Add[Id]):-1:1
-                    addtext = addtext * "inport[" * string(length(Add[Id])-i+1) * "]:"
-                    #print("inport[" * string(length(Add[Id])-i+1) * "]:")
-                    ##print("In" * string(i) * " ")
-                    addtext = addtext * "a" * AddChild[Id][i] * " "
-                    #print(AddChild[Id][i] * " ")
-                end
-                #print(addtext)
                 push!(Blk, addtext)
             end
             if Type[Id] == "product"
                 producttext = BlockLabel[Id] * " = " * "ProductBlock() "
                 for i in 2:-1:1
                     producttext = producttext * "inport[" * string(3-i) * "]:"
-                    producttext = producttext * "a" * ProductChild[Id][3-i] * " "
+                    producttext = producttext * ProductChild[Id][3-i] * " "
                 end
                 push!(Blk, producttext)
             end
@@ -288,9 +277,27 @@ module xmlToJulia
                 modtext = BlockLabel[Id] * " = " * "ModBlock() "
                 for i in 2:-1:1
                     modtext = modtext * "inport[" * string(3-i) * "]:"
-                    modtext = modtext * "a" * ModChild[Id][3-i] * " "
+                    modtext = modtext * ModChild[Id][3-i] * " "
                 end
                 push!(Blk, modtext)
+            end
+        end
+    end
+
+    function ParseVertexIn()
+        for i in 1:length(Inblk)
+            if haskey(Inblk, string(i))
+                intext = Inblk[string(i)] * " = " * "InBlock()"
+                push!(InBlock, intext)
+            end
+        end
+    end
+
+    function ParseVertexOut()
+        for i in 1:length(Outblk)
+            if haskey(Outblk, string(i))
+                outtext = Outblk[string(i)] * " = " * "OutBlock()"
+                push!(OutBlock, outtext)
             end
         end
     end
@@ -305,12 +312,12 @@ module xmlToJulia
         global Edge = Dict()
         global Target = Dict()
         global Source = Dict()
-        global Value = Dict()
-        global Add = Dict()
         global AddChild = Dict()
         global ProductChild = Dict()
         global parameter = Dict()
         global blk = Dict()
+        global Inblk = Dict()
+        global Outblk = Dict()
         global connect = Dict()
         global UpperLimit = Dict()
         global LowerLimit = Dict()
@@ -321,6 +328,8 @@ module xmlToJulia
         global ModelName = []
         global Parameter = []
         global Blk = []
+        global InBlock = []
+        global OutBlock = []
         global Connect = []
     end
 
@@ -361,12 +370,13 @@ module xmlToJulia
 
         for cell in eachelement(ro)
             Id = GetId(cell)
-            Option = Dict()
-            Parse(cell, Id, Option)
+            Parse(cell, Id)
             for child in eachelement(cell)
-                ParseChild(child, Id, Option)
+                ParseChild(child, Id)
             end
         end
+        ParseVertexIn()
+        ParseVertexOut()
     
         io = IOBuffer()
         for j in 1:length(ModelName)
@@ -375,10 +385,16 @@ module xmlToJulia
                 write(io, "@parameter $(Parameter[i])\n")
             end
             write(io, "\n")
+            for i in 1:length(InBlock)
+                write(io, "@blk $(InBlock[i])\n")
+            end
             for i in 1:length(Blk)
                 write(io, "@blk $(Blk[i])\n")
             end
-            println()
+            for i in 1:length(OutBlock)
+                write(io, "@blk $(OutBlock[i])\n")
+            end
+            write(io, "\n")
             for i in 1:length(Connect)
                 write(io, "@connect $(Connect[i])\n")
             end
@@ -391,4 +407,3 @@ module xmlToJulia
 
     
 end
-

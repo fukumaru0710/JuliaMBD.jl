@@ -11,6 +11,7 @@ include("Port.jl")
 include("Line.jl")
 
 include("predefined_blocks/AddBlock.jl")
+include("predefined_blocks/SubBlock.jl")
 include("predefined_blocks/GainBlock.jl")
 include("predefined_blocks/IntegratorBlock.jl")
 include("predefined_blocks/ModBlock.jl")

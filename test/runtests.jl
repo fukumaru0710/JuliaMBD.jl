@@ -241,7 +241,7 @@ end
     m = PulseGeneratorTest(m=8, alpha_P=100/(2^8-1), d_P_d=5)
     sol = @simulate(m, tspan=(0.0, 70.0), scope=(Ramp, PG))
     sol.graph 
-end=#
+end
 
 @testset "testADCModel" begin
     f = open("testADC.xml", "r")
@@ -299,4 +299,29 @@ end
     println(toJulia(data))
 
     @xmlmodel "MDtestNumber.xml"
+end=#
+
+@testset "MDtest2" begin
+    f = open("MDtest2.xml", "r")
+    data = read(f, String)
+    close(f)
+    println(toJulia(data))
+
+    @xmlmodel "MDtest2.xml"
+
+    @model MDTest begin
+        @parameter alpha_i u_M_d i_M_d Vs
+        
+        @blk Con = ConstantBlock(Vs)
+        @blk Ramp = RampBlock(slope=u_M_d, starttime=0, initialoutput=0)
+        @blk Ramp1 = RampBlock(slope=i_M_d, starttime=0, initialoutput=0)
+        @blk MD = MotorDriver(alpha_i=alpha_i) inport[1]:Vs inport[2]:u_M inport[3]:i_M outport[1]:v_A outport[2]:v_i
+        
+        @connect Con => Vs
+        @connect Ramp => u_M
+        @connect Ramp1 => i_M
+    end
+    m = MDTest(alpha_i=5/37.5, u_M_d=10, i_M_d=3, Vs=24)
+    sol = @simulate(m, tspan=(0.0, 10.0), scope=(v_A, Ramp, v_i, Ramp1))
+    sol.graph
 end

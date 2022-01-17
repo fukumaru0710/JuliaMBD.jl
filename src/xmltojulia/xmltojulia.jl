@@ -16,6 +16,7 @@ module xmlToJulia
     Target = Dict()
     Source = Dict()
     AddChild = Dict()
+    SubChild = Dict()
     ProductChild = Dict()
     parameter = Dict()
     blk = Dict()
@@ -26,6 +27,9 @@ module xmlToJulia
     LowerLimit = Dict()
     QuantizationInterval = Dict()
     ModChild = Dict()
+    SystemChildIn = Dict()
+    SystemChildOut = Dict()
+    modelName = Dict()
     #Option = Dict()
 
     ModelName = []
@@ -77,18 +81,18 @@ module xmlToJulia
         if haskey(data, "type")
             Type[id] = data["type"]
             if Type[id] == "input"
-                if haskey(data, "number")
-                    Inblk[string(data["number"])] = BlockLabel[id]
-                end
+                BlockLabel[id] = "In" * BlockLabel[id]
+                Inblk[string(data["blockLabel"])] = BlockLabel[id]
             end
             if Type[id] == "output"
-                if haskey(data, "number")
-                    Outblk[string(data["number"])] = BlockLabel[id]
-                end
+                BlockLabel[id] = "Out" * BlockLabel[id]
+                Outblk[string(data["blockLabel"])] = BlockLabel[id]
             end
             if Type[id] == "add"
-                #Add[id] = []
                 AddChild[id] = []
+            end
+            if Type[id] == "sub"
+                SubChild[id] = []
             end
             if Type[id] == "model"
                 parameter[id] = data["parameter"]
@@ -106,6 +110,11 @@ module xmlToJulia
             if Type[id] == "mod"
                 ModChild[id] = []
             end
+            if Type[id] == "system"
+                SystemChildIn[id] = []
+                SystemChildOut[id] = []
+                modelName[id] = data["modelName"]
+            end
         end
         if haskey(data, "parent")
             Parent[id] = data["parent"]
@@ -114,6 +123,11 @@ module xmlToJulia
                     newid = replace.(id, "-"=>"")
                     newid = "a" * newid
                     push!(AddChild[Parent[id]], newid)
+                end
+                if Type[Parent[id]] == "sub"
+                    newid = replace.(id, "-"=>"")
+                    newid = "a" * newid
+                    push!(SubChild[Parent[id]], newid)
                 end
                 if Type[Parent[id]] == "product"
                     newid = replace.(id, "-"=>"")
@@ -125,13 +139,29 @@ module xmlToJulia
                     newid = "a" * newid
                     push!(ModChild[Parent[id]], newid)
                 end
+                if Type[Parent[id]] == "system"
+                    if Type[id] == "inport"
+                        #inporttext = blockLabel[Parent[id]] * data["portLabel"]
+                        #push!(SystemChildIn[Parent[id]], inporttext)
+                        push!(SystemChildIn[Parent[id]], data[portLabel])
+                    end
+                    if Type[id] == "outport"
+                        #outporttext = blockLabel[Parent[id]] * data["portLabel"]
+                        #push!(SystemChildOut[Parent[id]], outporttext)
+                        push!(SystemChildOut[Parent[id]], data[portLabel])
+                    end
+                end
             end
         end
         if haskey(data, "vertex")
             Vertex[id] = data["vertex"]
         end
         if haskey(data, "parameter")
-            parameter[id] = data["parameter"]
+            if Type[id] == "system"
+                push!(parameter[id], data["parameter"])
+            else
+                parameter[id] = data["parameter"]
+            end
         end
         if haskey(data, "edge")
             Edge[id] = data["edge"]
@@ -243,6 +273,14 @@ module xmlToJulia
                 end
                 push!(Blk, addtext)
             end
+            if Type[Id] == "sub"
+                subtext = BlockLabel[Id] * " = " * "SubBlock() "
+                for i in 2:-1:1
+                    subtext = subtext * "inport[" * string(3-i) * "]:"
+                    subtext = subtext * SubChild[Id][3-i] * " "
+                end
+                push!(Blk, subtext)
+            end
             if Type[Id] == "product"
                 producttext = BlockLabel[Id] * " = " * "ProductBlock() "
                 for i in 2:-1:1
@@ -280,6 +318,10 @@ module xmlToJulia
                     modtext = modtext * ModChild[Id][3-i] * " "
                 end
                 push!(Blk, modtext)
+            end
+            if Type[Id] == "system"
+                systemtext = BlockLabel[Id] * " = " * modelName[Id]
+
             end
         end
     end
@@ -323,6 +365,9 @@ module xmlToJulia
         global LowerLimit = Dict()
         global QuantizationInterval = Dict()
         global ModChild = Dict()
+        global SystemChildIn = Dict()
+        global SystemChildOut = Dict()
+        global modelName = Dict()
         #Option = Dict()
 
         global ModelName = []

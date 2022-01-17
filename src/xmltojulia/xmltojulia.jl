@@ -257,7 +257,7 @@ module xmlToJulia
             end
             if Type[Id] == "integrator"
                 integratortext = BlockLabel[Id] * " = " * "IntegratorBlock("
-                #push!(Blk, BlockLabel[Id] * " = " * "IntegratorBlock(" * ")")
+                push!(Blk, BlockLabel[Id] * " = " * "IntegratorBlock(" * ")")
                 #print(BlockLabel[Id] * " = " * "IntegratorBlock(" * ")")
                 #=if haskey(Option, "initialcondition")
                     integratortext = integratortext * "initialcondition=" * Option["initialcondition"]

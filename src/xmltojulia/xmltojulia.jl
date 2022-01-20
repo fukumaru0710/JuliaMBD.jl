@@ -30,6 +30,7 @@ module xmlToJulia
     SystemChildIn = Dict()
     SystemChildOut = Dict()
     modelName = Dict()
+    InitialCondition = Dict()
     #Option = Dict()
 
     ModelName = []
@@ -88,6 +89,9 @@ module xmlToJulia
                 BlockLabel[id] = "Out" * BlockLabel[id]
                 Outblk[string(data["blockLabel"])] = BlockLabel[id]
             end
+            if Type[id] == "integrator"
+                InitialCondition[id] = []
+            end
             if Type[id] == "add"
                 AddChild[id] = []
             end
@@ -111,6 +115,7 @@ module xmlToJulia
                 ModChild[id] = []
             end
             if Type[id] == "system"
+                parameter[id] = []
                 SystemChildIn[id] = []
                 SystemChildOut[id] = []
                 modelName[id] = data["modelName"]
@@ -140,15 +145,19 @@ module xmlToJulia
                     push!(ModChild[Parent[id]], newid)
                 end
                 if Type[Parent[id]] == "system"
-                    if Type[id] == "inport"
+                    if data["value"] == "i"
                         #inporttext = blockLabel[Parent[id]] * data["portLabel"]
                         #push!(SystemChildIn[Parent[id]], inporttext)
-                        push!(SystemChildIn[Parent[id]], data[portLabel])
+                        newid = replace.(id, "-"=>"")
+                        newid = "a" * newid
+                        push!(SystemChildIn[Parent[id]], newid)
                     end
-                    if Type[id] == "outport"
+                    if data["value"] == "o"
                         #outporttext = blockLabel[Parent[id]] * data["portLabel"]
                         #push!(SystemChildOut[Parent[id]], outporttext)
-                        push!(SystemChildOut[Parent[id]], data[portLabel])
+                        newid = replace.(id, "-"=>"")
+                        newid = "a" * newid
+                        push!(SystemChildOut[Parent[id]], newid)
                     end
                 end
             end
@@ -158,7 +167,7 @@ module xmlToJulia
         end
         if haskey(data, "parameter")
             if Type[id] == "system"
-                push!(parameter[id], data["parameter"])
+                parameter[id] = split(data["parameter"])
             else
                 parameter[id] = data["parameter"]
             end
@@ -170,6 +179,11 @@ module xmlToJulia
             end
             if haskey(data, "source")
                 Source[id] = data["source"]
+            end
+        end
+        if haskey(data, "initialcondition")
+            if data["initialcondition"] != ""
+                InitialCondition[id] = data["initialcondition"]
             end
         end
         if haskey(data, "upperlimit")
@@ -209,13 +223,6 @@ module xmlToJulia
             if Type[Id] == "model"
                 push!(ModelName, BlockLabel[Id])
             end
-            if Type[Id] == "integrator"
-                #Option = Dict()
-                #if data["initialcondition"] != ""
-                #    Option["initialcondition"] = data["initialcondition"]
-                    #println("op")
-                #end
-            end
         end
     end
 
@@ -227,14 +234,22 @@ module xmlToJulia
 
     function ParseEdge(data, Id)
         if haskey(BlockLabel, Target[Id])
-            push!(Connect, BlockLabel[Source[Id]] * " => " * BlockLabel[Target[Id]])
-            #println("@connect " * BlockLabel[Source[Id]] * " => " * BlockLabel[Target[Id]])
+            if haskey(BlockLabel, Source[Id])
+                push!(Connect, BlockLabel[Source[Id]] * " => " * BlockLabel[Target[Id]])
+                #println("@connect " * BlockLabel[Source[Id]] * " => " * BlockLabel[Target[Id]])
+            else
+                newsource = replace.(Source[Id], "-"=>"")
+                push!(Connect, "a" * newsource * " => " * BlockLabel[Target[Id]])
+            end
         else
-            #AddBlock、ProductBlock上の演算子の処理(+,-,・につなぐのでtargetにはならない)
-            #println("@connect " * BlockLabel[Source[Id]] * " => " * BlockLabel[Parent[Target[Id]]] * " " * Value[Target[Id]])
             newtarget = replace.(Target[Id], "-"=>"")
-            push!(Connect, BlockLabel[Source[Id]] * " => " * "a" * newtarget)
-            #println("@connect " * BlockLabel[Source[Id]] * " => " * Target[Id])
+            if haskey(BlockLabel, Source[Id])
+                push!(Connect, BlockLabel[Source[Id]] * " => " * "a" * newtarget)
+                #println("@connect " * BlockLabel[Source[Id]] * " => " * Target[Id])
+            else
+                newsource = replace.(Source[Id], "-"=>"")
+                push!(Connect, "a" * newsource * " => " * "a" * newtarget)
+            end
         end
     end
 
@@ -257,13 +272,11 @@ module xmlToJulia
             end
             if Type[Id] == "integrator"
                 integratortext = BlockLabel[Id] * " = " * "IntegratorBlock("
-                push!(Blk, BlockLabel[Id] * " = " * "IntegratorBlock(" * ")")
-                #print(BlockLabel[Id] * " = " * "IntegratorBlock(" * ")")
-                #=if haskey(Option, "initialcondition")
-                    integratortext = integratortext * "initialcondition=" * Option["initialcondition"]
+                if InitialCondition[Id] != Any[]
+                    integratortext = integratortext * "initialcondition=" * InitialCondition[Id]
                 end
                 integratortext = integratortext * ")"
-                push!(Blk, integratortext)=#
+                push!(Blk, integratortext)
             end
             if Type[Id] == "add"
                 addtext = BlockLabel[Id] * " = " * "AddBlock() "
@@ -320,8 +333,22 @@ module xmlToJulia
                 push!(Blk, modtext)
             end
             if Type[Id] == "system"
-                systemtext = BlockLabel[Id] * " = " * modelName[Id]
-
+                systemtext = BlockLabel[Id] * " = " * modelName[Id] * "("
+                for i in 1:length(parameter[Id])
+                    systemtext = systemtext * parameter[Id][i] * "=" * parameter[Id][i]
+                    if i == length(parameter[Id])
+                    else
+                        systemtext = systemtext * ", "
+                    end
+                end
+                systemtext = systemtext * ")"
+                for i in 1:length(SystemChildIn[Id])
+                    systemtext = systemtext * " inport[" * string(i) * "]:" * SystemChildIn[Id][i]
+                end
+                for i in 1:length(SystemChildOut[Id])
+                    systemtext = systemtext * " outport[" * string(i) * "]:" * SystemChildOut[Id][i]
+                end
+                push!(Blk, systemtext)
             end
         end
     end
@@ -368,6 +395,7 @@ module xmlToJulia
         global SystemChildIn = Dict()
         global SystemChildOut = Dict()
         global modelName = Dict()
+        global InitialCondition = Dict()
         #Option = Dict()
 
         global ModelName = []

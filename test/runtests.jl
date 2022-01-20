@@ -301,11 +301,13 @@ end
     @xmlmodel "MDtestNumber.xml"
 end=#
 
-@testset "MDtest2" begin
-    f = open("MDtest2.xml", "r")
+#=@testset "MDtest2" begin
+    #=f = open("MDtest2.xml", "r")
     data = read(f, String)
     close(f)
     println(toJulia(data))
+    =#
+    @modelcontents "MDtest2.xml"
 
     @xmlmodel "MDtest2.xml"
 
@@ -322,6 +324,81 @@ end=#
         @connect Ramp1 => i_M
     end
     m = MDTest(alpha_i=5/37.5, u_M_d=10, i_M_d=3, Vs=24)
+    sol = @simulate(m, tspan=(0.0, 10.0), scope=(v_A, Ramp, v_i, Ramp1))
+    sol.graph
+end
+
+@testset "DCMD" begin
+    f = open("DCMotorDisk.xml", "r")
+    data = read(f, String)
+    close(f)
+    println(toJulia(data))
+
+    @xmlmodel "DCMotorDisk.xml"
+end=#
+
+#=@testset "MSDModel" begin
+    @modelcontents "MSDModel.xml"
+
+    @xmlmodel "MSDModel.xml"
+
+    @model MSDTest begin
+        @parameter M g k D p_cycle f p_width
+
+        @blk Pulse = PulseGeneratorBlock(amplitude=f, period=p_cycle, pulsewidth=p_width, phasedelay=10)
+        @blk MSDModel = MSD(M=M, g=g, k=k, D=D)
+
+        @connect Pulse => MSDModel
+    end
+
+    m = MSDTest(M=10, g=9.8, k=100, D=10, p_cycle=20, f=10, p_width=50)
+    sol = @simulate(m, tspan=(0.0, 60.0), scope=(MSDModel))
+    sol.graph
+end=#
+
+#=@testset "TempModel" begin
+    @modelcontents "TempModel.xml"
+
+    @xmlmodel "TempModel.xml"
+
+    @model TempTest begin
+        @parameter C R d0 q1
+
+        @blk Step = StepBlock(steptime=100, initialvalue=0, finalvalue=q1)
+        @blk TempModel = Temp(C=C, R=R, d0=d0)
+
+        @connect Step => TempModel
+    end
+
+    m = TempTest(C=4187, R=0.1, d0=20, q1=300)
+    sol = @simulate(m, tspan=(0.0, 1800), scope=(Step, TempModel))
+    sol.graph
+end=#
+
+@testset "systemtest" begin
+    @modelcontents "systemtest.xml"
+end
+
+@testset "systemtest2" begin
+    @modelcontents "systemtest2.xml"
+end
+
+@testset "MDTest" begin
+    @xmlmodel "MDtest2.xml"
+
+    @xmlmodel "MDTest.xml"
+
+    @model MDTest2 begin
+        @parameter alpha_i u_M_d i_M_d Vs
+        
+        @blk Ramp = RampBlock(slope=u_M_d, starttime=0, initialoutput=0)
+        @blk Ramp1 = RampBlock(slope=i_M_d, starttime=0, initialoutput=0)
+        @blk MD = MDTest(alpha_i=alpha_i, Vs=Vs) inport[1]:u_M inport[2]:i_M outport[1]:v_A outport[2]:v_i
+        
+        @connect Ramp => u_M
+        @connect Ramp1 => i_M
+    end
+    m = MDTest2(alpha_i=5/37.5, u_M_d=10, i_M_d=3, Vs=24)
     sol = @simulate(m, tspan=(0.0, 10.0), scope=(v_A, Ramp, v_i, Ramp1))
     sol.graph
 end

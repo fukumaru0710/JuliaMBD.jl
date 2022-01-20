@@ -3,7 +3,7 @@ module JuliaMBD
 import DifferentialEquations
 import Plots
 
-export toJulia, @xmlmodel
+export toJulia, @xmlmodel, @modelcontents
 
 include("TypeDef.jl")
 
@@ -50,6 +50,15 @@ macro xmlmodel(fn)
         eval(expr)
     end
 esc(expr)
+end
+
+macro modelcontents(fn)
+    expr2 = quote
+        f = open($fn, "r")
+        data = read(f, String)
+        close(f)
+        println(toJulia(data))
+    end
 end
 
 end

@@ -373,7 +373,7 @@ end=#
     m = TempTest(C=4187, R=0.1, d0=20, q1=300)
     sol = @simulate(m, tspan=(0.0, 1800), scope=(Step, TempModel))
     sol.graph
-end=#
+end
 
 @testset "systemtest" begin
     @modelcontents "systemtest.xml"
@@ -381,9 +381,9 @@ end
 
 @testset "systemtest2" begin
     @modelcontents "systemtest2.xml"
-end
+end=#
 
-@testset "MDTest" begin
+#=@testset "MDTest" begin
     @xmlmodel "MDtest2.xml"
 
     @xmlmodel "MDTest.xml"
@@ -401,4 +401,48 @@ end
     m = MDTest2(alpha_i=5/37.5, u_M_d=10, i_M_d=3, Vs=24)
     sol = @simulate(m, tspan=(0.0, 10.0), scope=(v_A, Ramp, v_i, Ramp1))
     sol.graph
+end=#
+
+@testset "inport, outport" begin
+    @modelcontents "InOutTest.xml"
+    @xmlmodel "InOutTest.xml"
+    @model PulseGeneratorTest begin
+        @parameter m alpha_P
+        @parameter d_P_d
+        
+        @blk Ramp = RampBlock(slope=d_P_d, initialoutput=-50)
+        @blk PG = PulseGenerator(m=m, alpha_P=alpha_P)
+        
+        @connect Ramp => PG
+    end
+    m = PulseGeneratorTest(m=8, alpha_P=100/(2^8-1), d_P_d=5)
+    sol = @simulate(m, tspan=(0.0, 70.0), scope=(Ramp, PG))
+    sol.graph
+end
+
+@testset "MotorDriver" begin
+    @modelcontents "MotorDriver.xml"
+    @xmlmodel "MotorDriver.xml"
+
+    @modelcontents "MDriverTest.xml"
+    @xmlmodel "MDriverTest.xml"
+
+    m = MDriverTest(alpha_i=5/37.5, u_M_d=10, i_M_d=3, Vs=24)
+    sol = @simulate(m, tspan=(0.0, 10.0), scope=(azRXO18pTX6HvRUZAOTaL3, Ramp, Ramp1))
+    sol.graph
+end
+
+@testset "MotorDisk" begin
+    @modelcontents "MotorDisk.xml"
+    @xmlmodel "MotorDisk.xml"
+end
+
+@testset "Tachogenerator" begin
+    @modelcontents "Tachogenerator.xml"
+    @xmlmodel "Tachogenerator.xml"
+end
+
+@testset "Plant" begin
+    @modelcontents "PlantModel.xml"
+    @xmlmodel "PlantModel.xml"
 end

@@ -31,6 +31,18 @@ module xmlToJulia
     SystemChildOut = Dict()
     modelName = Dict()
     InitialCondition = Dict()
+    Child = Dict()
+    Slope = Dict()
+    InitialOutput = Dict()
+    StartTime = Dict()
+    StepTime = Dict()
+    InitialValue = Dict()
+    FinalValue = Dict()
+    Amplitude = Dict()
+    Period = Dict()
+    PulseWidth = Dict()
+    PhaseDelay = Dict()
+
     #Option = Dict()
 
     ModelName = []
@@ -94,67 +106,85 @@ module xmlToJulia
             end
             if Type[id] == "add"
                 AddChild[id] = []
+                Child[id] = []
             end
             if Type[id] == "sub"
                 SubChild[id] = []
+                Child[id] = []
             end
             if Type[id] == "model"
                 parameter[id] = data["parameter"]
             end
             if Type[id] == "product"
                 ProductChild[id] = []
-            end
-            if Type[id] == "saturation"
-                UpperLimit[id] = []
-                LowerLimit[id] = []
-            end
-            if Type[id] == "quantizer"
-                QuantizationInterval[id] = []
+                Child[id] = []
             end
             if Type[id] == "mod"
                 ModChild[id] = []
+                Child[id] = []
             end
             if Type[id] == "system"
                 parameter[id] = []
                 SystemChildIn[id] = []
                 SystemChildOut[id] = []
                 modelName[id] = data["modelName"]
+                Child[id] = []
             end
         end
         if haskey(data, "parent")
             Parent[id] = data["parent"]
             if haskey(Type, Parent[id])
                 if Type[Parent[id]] == "add"
-                    newid = replace.(id, "-"=>"")
-                    newid = "a" * newid
-                    push!(AddChild[Parent[id]], newid)
+                    if string(data["value"][1]) == "i"
+                        newid = replace.(id, "-"=>"")
+                        newid = "a" * newid
+                        if string(data["value"][2]) == "1"
+                            pushfirst!(AddChild[Parent[id]], newid)
+                        else
+                            push!(AddChild[Parent[id]], newid)
+                        end
+                    end
                 end
                 if Type[Parent[id]] == "sub"
-                    newid = replace.(id, "-"=>"")
-                    newid = "a" * newid
-                    push!(SubChild[Parent[id]], newid)
+                    if string(data["value"][1]) == "i"
+                        newid = replace.(id, "-"=>"")
+                        newid = "a" * newid
+                        if string(data["value"][2]) == "1"
+                            pushfirst!(SubChild[Parent[id]], newid)
+                        else
+                            push!(SubChild[Parent[id]], newid)
+                        end
+                    end
                 end
                 if Type[Parent[id]] == "product"
-                    newid = replace.(id, "-"=>"")
-                    newid = "a" * newid
-                    push!(ProductChild[Parent[id]], newid)
+                    if string(data["value"][1]) == "i"
+                        newid = replace.(id, "-"=>"")
+                        newid = "a" * newid
+                        if string(data["value"][2]) == "1"
+                            pushfirst!(ProductChild[Parent[id]], newid)
+                        else
+                            push!(ProductChild[Parent[id]], newid)
+                        end
+                    end
                 end
                 if Type[Parent[id]] == "mod"
-                    newid = replace.(id, "-"=>"")
-                    newid = "a" * newid
-                    push!(ModChild[Parent[id]], newid)
+                    if string(data["value"][1]) == "i"
+                        newid = replace.(id, "-"=>"")
+                        newid = "a" * newid
+                        if string(data["value"][2]) == "1"
+                            pushfirst!(ModChild[Parent[id]], newid)
+                        else
+                            push!(ModChild[Parent[id]], newid)
+                        end
+                    end
                 end
                 if Type[Parent[id]] == "system"
-                    if data["value"] == "i"
-                        #inporttext = blockLabel[Parent[id]] * data["portLabel"]
-                        #push!(SystemChildIn[Parent[id]], inporttext)
+                    if string(data["value"][1]) == "i"
                         newid = replace.(id, "-"=>"")
                         newid = "a" * newid
                         push!(SystemChildIn[Parent[id]], newid)
                     end
-                    if data["value"] == "o"
-                        #outporttext = blockLabel[Parent[id]] * data["portLabel"]
-                        #push!(SystemChildOut[Parent[id]], outporttext)
+                    if string(data["value"][1]) == "o"
                         newid = replace.(id, "-"=>"")
                         newid = "a" * newid
                         push!(SystemChildOut[Parent[id]], newid)
@@ -182,24 +212,46 @@ module xmlToJulia
             end
         end
         if haskey(data, "initialcondition")
-            if data["initialcondition"] != ""
                 InitialCondition[id] = data["initialcondition"]
-            end
         end
         if haskey(data, "upperlimit")
-            if data["upperlimit"] != ""
                 UpperLimit[id] = data["upperlimit"]
-            end
         end
         if haskey(data, "lowerlimit")
-            if data["lowerlimit"] != ""
                 LowerLimit[id] = data["lowerlimit"]
-            end
         end
         if haskey(data, "quantizationinterval")
-            if data["quantizationinterval"] != ""
                 QuantizationInterval[id] = data["quantizationinterval"]
-            end
+        end
+        if haskey(data, "slope")
+            Slope[id] = data["slope"]
+        end
+        if haskey(data, "initialoutput")
+                InitialOutput[id] = data["initialoutput"]
+        end
+        if haskey(data, "starttime")
+                StartTime[id] = data["starttime"]
+        end
+        if haskey(data, "steptime")
+            StepTime[id] = data["steptime"]
+        end
+        if haskey(data, "initialvalue")
+            InitialValue[id] = data["initialvalue"]
+        end
+        if haskey(data, "finalvalue")
+            FinalValue[id] = data["finalvalue"]
+        end
+        if haskey(data, "amplitude")
+            Amplitude[id] = data["amplitude"]
+        end
+        if haskey(data, "period")
+            Period[id] = data["period"]
+        end
+        if haskey(data, "pulsewidth")
+            PulseWidth[id] = data["pulsewidth"]
+        end
+        if haskey(data, "phasedelay")
+            PhaseDelay[id] = data["phasedelay"]
         end
     end
 
@@ -232,23 +284,21 @@ module xmlToJulia
         end
     end
 
-    function ParseEdge(data, Id)
-        if haskey(BlockLabel, Target[Id])
-            if haskey(BlockLabel, Source[Id])
-                push!(Connect, BlockLabel[Source[Id]] * " => " * BlockLabel[Target[Id]])
-                #println("@connect " * BlockLabel[Source[Id]] * " => " * BlockLabel[Target[Id]])
-            else
-                newsource = replace.(Source[Id], "-"=>"")
-                push!(Connect, "a" * newsource * " => " * BlockLabel[Target[Id]])
-            end
-        else
+    function ParseEdge(data, Id)        
+        if haskey(Child, Parent[Target[Id]])
             newtarget = replace.(Target[Id], "-"=>"")
-            if haskey(BlockLabel, Source[Id])
-                push!(Connect, BlockLabel[Source[Id]] * " => " * "a" * newtarget)
-                #println("@connect " * BlockLabel[Source[Id]] * " => " * Target[Id])
-            else
+            if haskey(Child, Parent[Source[Id]])
                 newsource = replace.(Source[Id], "-"=>"")
                 push!(Connect, "a" * newsource * " => " * "a" * newtarget)
+            else
+                push!(Connect, BlockLabel[Parent[Source[Id]]] * " => " * "a" * newtarget)
+            end
+        else
+            if Type[Parent[Source[Id]]] == "system"
+                newsource = replace.(Source[Id], "-"=>"")
+                push!(Connect, "a" * newsource * " => " * BlockLabel[Parent[Target[Id]]])
+            else
+                push!(Connect, BlockLabel[Parent[Source[Id]]] * " => " * BlockLabel[Parent[Target[Id]]])
             end
         end
     end
@@ -258,21 +308,60 @@ module xmlToJulia
         elseif Type[Id] == "model"
             push!(Parameter, parameter[Id])
         else
-            #=if Type[Id] == "input"
-                push!(Blk, BlockLabel[Id] * " = " * "InBlock()")
-            end
-            if Type[Id] == "output"
-                push!(Blk, BlockLabel[Id] * " = " * "OutBlock()")
-            end=#
             if Type[Id] == "constant"
                 push!(Blk, BlockLabel[Id] * " = " * "ConstantBlock(" * parameter[Id] * ")")
+            end
+            if Type[Id] == "ramp"
+                ramptext = BlockLabel[Id] * " = " * "RampBlock("
+                if Slope[Id] != ""
+                    ramptext = ramptext * "slope=" * Slope[Id]
+                end
+                if StartTime[Id] != ""
+                    ramptext = ramptext * "starttime=" * StartTime[Id]
+                end
+                if InitialOutput[Id] != ""
+                    ramptext = ramptext * "initialoutput=" * InitialOutput[Id]
+                end
+                ramptext = ramptext * ")"
+                push!(Blk, ramptext)
+            end
+            if Type[Id] == "step"
+                steptext = BlockLabel[Id] * " = " * "StepBlock("
+                if StepTime[Id] != ""
+                    steptext = steptext * "steptime=" * StepTime[Id]
+                end
+                if InitialValue[Id] != ""
+                    steptext = steptext * "initialvalue=" * InitialValue[Id]
+                end
+                if FinalValue[Id] != ""
+                    steptext = steptext * "finalvalue=" * FinalValue[Id]
+                end
+                steptext = steptext * ")"
+                push!(Blk, steptext)
+            end
+            if Type[Id] == "pulse"
+                pulsetext = BlockLabel[Id] * " = " * "PulseGeneratorBlock("
+                if Amplitude[Id] != ""
+                    pulsetext = pulsetext * "amplitude=" * Amplitude[Id]
+                end
+                if Period[Id] != ""
+                    pulsetext = pulsetext * "period=" * Period[Id]
+                end
+                if PulseWidth[Id] != ""
+                    pulsetext = pulsetext * "pulsewidth=" * PulseWidth[Id]
+                end
+                if PhaseDelay[Id] != ""
+                    pulsetext = pulsetext * "phasedelay=" * PhaseDelay[Id]
+                end
+                pulsetext = pulsetext * ")"
+                push!(Blk, pulsetext)
             end
             if Type[Id] == "gain"
                 push!(Blk, BlockLabel[Id] * " = " * "GainBlock(" * parameter[Id] * ")")
             end
             if Type[Id] == "integrator"
                 integratortext = BlockLabel[Id] * " = " * "IntegratorBlock("
-                if InitialCondition[Id] != Any[]
+                if InitialCondition[Id] != ""
                     integratortext = integratortext * "initialcondition=" * InitialCondition[Id]
                 end
                 integratortext = integratortext * ")"
@@ -280,37 +369,37 @@ module xmlToJulia
             end
             if Type[Id] == "add"
                 addtext = BlockLabel[Id] * " = " * "AddBlock() "
-                for i in 2:-1:1
-                    addtext = addtext * "inport[" * string(3-i) * "]:"
-                    addtext = addtext * AddChild[Id][3-i] * " "
+                for i in 1:2
+                    addtext = addtext * "inport[" * string(i) * "]:"
+                    addtext = addtext * AddChild[Id][i] * " "
                 end
                 push!(Blk, addtext)
             end
             if Type[Id] == "sub"
                 subtext = BlockLabel[Id] * " = " * "SubBlock() "
-                for i in 2:-1:1
-                    subtext = subtext * "inport[" * string(3-i) * "]:"
-                    subtext = subtext * SubChild[Id][3-i] * " "
+                for i in 1:2
+                    subtext = subtext * "inport[" * string(i) * "]:"
+                    subtext = subtext * SubChild[Id][i] * " "
                 end
                 push!(Blk, subtext)
             end
             if Type[Id] == "product"
                 producttext = BlockLabel[Id] * " = " * "ProductBlock() "
-                for i in 2:-1:1
-                    producttext = producttext * "inport[" * string(3-i) * "]:"
-                    producttext = producttext * ProductChild[Id][3-i] * " "
+                for i in 1:2
+                    producttext = producttext * "inport[" * string(i) * "]:"
+                    producttext = producttext * ProductChild[Id][i] * " "
                 end
                 push!(Blk, producttext)
             end
             if Type[Id] == "saturation"
                 saturationtext = BlockLabel[Id] * " = " * "SaturationBlock("
-                if UpperLimit[Id] != Any[]
+                if UpperLimit[Id] != ""
                     saturationtext = saturationtext * "upperlimit=" * UpperLimit[Id]
-                    if LowerLimit[Id] != Any[]
+                    if LowerLimit[Id] != ""
                         saturationtext = saturationtext * ", "
                     end
                 end
-                if LowerLimit[Id] != Any[]
+                if LowerLimit[Id] != ""
                     saturationtext = saturationtext * "lowerlimit=" * LowerLimit[Id]
                 end
                 saturationtext = saturationtext * ")"
@@ -318,7 +407,7 @@ module xmlToJulia
             end
             if Type[Id] == "quantizer"
                 quantizertext = BlockLabel[Id] * " = " * "QuantizerBlock("
-                if QuantizationInterval[Id] != Any[]
+                if QuantizationInterval[Id] != ""
                     quantizertext = quantizertext * "quantizationinterval=" * QuantizationInterval[Id]
                 end
                 quantizertext = quantizertext * ")"
@@ -326,9 +415,9 @@ module xmlToJulia
             end
             if Type[Id] == "mod"
                 modtext = BlockLabel[Id] * " = " * "ModBlock() "
-                for i in 2:-1:1
-                    modtext = modtext * "inport[" * string(3-i) * "]:"
-                    modtext = modtext * ModChild[Id][3-i] * " "
+                for i in 1:2
+                    modtext = modtext * "inport[" * string(i) * "]:"
+                    modtext = modtext * ModChild[Id][i] * " "
                 end
                 push!(Blk, modtext)
             end
@@ -396,6 +485,10 @@ module xmlToJulia
         global SystemChildOut = Dict()
         global modelName = Dict()
         global InitialCondition = Dict()
+        global Child = Dict()
+        global Slope = Dict()
+        global InitialOutput = Dict()
+        global StartTime = Dict()
         #Option = Dict()
 
         global ModelName = []

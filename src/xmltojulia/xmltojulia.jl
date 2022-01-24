@@ -93,6 +93,9 @@ module xmlToJulia
         end
         if haskey(data, "type")
             Type[id] = data["type"]
+            if Type[id] == "model"
+                parameter[id] = data["parameter"]
+            end
             if Type[id] == "input"
                 BlockLabel[id] = "In" * BlockLabel[id]
                 Inblk[string(data["blockLabel"])] = BlockLabel[id]
@@ -111,9 +114,6 @@ module xmlToJulia
             if Type[id] == "sub"
                 SubChild[id] = []
                 Child[id] = []
-            end
-            if Type[id] == "model"
-                parameter[id] = data["parameter"]
             end
             if Type[id] == "product"
                 ProductChild[id] = []
@@ -287,7 +287,7 @@ module xmlToJulia
     function ParseEdge(data, Id)        
         if haskey(Child, Parent[Target[Id]])
             newtarget = replace.(Target[Id], "-"=>"")
-            if haskey(Child, Parent[Source[Id]])
+            if Type[Parent[Source[Id]]] == "system"
                 newsource = replace.(Source[Id], "-"=>"")
                 push!(Connect, "a" * newsource * " => " * "a" * newtarget)
             else

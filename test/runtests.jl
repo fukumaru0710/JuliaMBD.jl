@@ -446,3 +446,7 @@ end
     @modelcontents "PlantModel.xml"
     @xmlmodel "PlantModel.xml"
 end
+
+@testset "Plant_test" begin
+    @modelcontents "PlantModel_test.xml"
+end

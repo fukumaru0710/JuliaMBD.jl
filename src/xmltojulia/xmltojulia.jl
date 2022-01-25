@@ -181,12 +181,12 @@ module xmlToJulia
                 if Type[Parent[id]] == "system"
                     if string(data["value"][1]) == "i"
                         newid = replace.(id, "-"=>"")
-                        newid = "a" * newid
+                        newid = string(data["value"][2]) * "a" * newid
                         push!(SystemChildIn[Parent[id]], newid)
                     end
                     if string(data["value"][1]) == "o"
                         newid = replace.(id, "-"=>"")
-                        newid = "a" * newid
+                        newid = string(data["value"][2]) * "a" * newid
                         push!(SystemChildOut[Parent[id]], newid)
                     end
                 end
@@ -432,10 +432,10 @@ module xmlToJulia
                 end
                 systemtext = systemtext * ")"
                 for i in 1:length(SystemChildIn[Id])
-                    systemtext = systemtext * " inport[" * string(i) * "]:" * SystemChildIn[Id][i]
+                    systemtext = systemtext * " inport[" * string(SystemChildIn[Id][i][1]) * "]:" * SystemChildIn[Id][i][2:end]
                 end
                 for i in 1:length(SystemChildOut[Id])
-                    systemtext = systemtext * " outport[" * string(i) * "]:" * SystemChildOut[Id][i]
+                    systemtext = systemtext * " outport[" * string(SystemChildOut[Id][i][1]) * "]:" * SystemChildOut[Id][i][2:end]
                 end
                 push!(Blk, systemtext)
             end

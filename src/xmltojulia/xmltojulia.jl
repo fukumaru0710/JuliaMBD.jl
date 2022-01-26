@@ -18,6 +18,7 @@ module xmlToJulia
     AddChild = Dict()
     SubChild = Dict()
     ProductChild = Dict()
+    DivisionChild = Dict()
     parameter = Dict()
     blk = Dict()
     Inblk = Dict()
@@ -119,6 +120,10 @@ module xmlToJulia
                 ProductChild[id] = []
                 Child[id] = []
             end
+            if Type[id] == "division"
+                DivisionChild[id] = []
+                Child[id] = []
+            end
             if Type[id] == "mod"
                 ModChild[id] = []
                 Child[id] = []
@@ -164,6 +169,17 @@ module xmlToJulia
                             pushfirst!(ProductChild[Parent[id]], newid)
                         else
                             push!(ProductChild[Parent[id]], newid)
+                        end
+                    end
+                end
+                if Type[Parent[id]] == "division"
+                    if string(data["value"][1]) == "i"
+                        newid = replace.(id, "-"=>"")
+                        newid = "a" * newid
+                        if string(data["value"][2]) == "1"
+                            pushfirst!(DivisionChild[Parent[id]], newid)
+                        else
+                            push!(DivisionChild[Parent[id]], newid)
                         end
                     end
                 end
@@ -315,9 +331,15 @@ module xmlToJulia
                 ramptext = BlockLabel[Id] * " = " * "RampBlock("
                 if Slope[Id] != ""
                     ramptext = ramptext * "slope=" * Slope[Id]
+                    if StartTime[Id] != "" || InitialOutput[Id] != ""
+                        ramptext = ramptext * ", "
+                    end
                 end
                 if StartTime[Id] != ""
                     ramptext = ramptext * "starttime=" * StartTime[Id]
+                    if InitialOutput[Id] != ""
+                        ramptext = ramptext * ", "
+                    end
                 end
                 if InitialOutput[Id] != ""
                     ramptext = ramptext * "initialoutput=" * InitialOutput[Id]
@@ -329,9 +351,15 @@ module xmlToJulia
                 steptext = BlockLabel[Id] * " = " * "StepBlock("
                 if StepTime[Id] != ""
                     steptext = steptext * "steptime=" * StepTime[Id]
+                    if InitialValue[Id] != "" || FinalValue[Id] != ""
+                        steptext = steptext * ", "
+                    end
                 end
                 if InitialValue[Id] != ""
                     steptext = steptext * "initialvalue=" * InitialValue[Id]
+                    if FinalValue[Id] != ""
+                        steptext = steptext * ", "
+                    end
                 end
                 if FinalValue[Id] != ""
                     steptext = steptext * "finalvalue=" * FinalValue[Id]
@@ -343,12 +371,21 @@ module xmlToJulia
                 pulsetext = BlockLabel[Id] * " = " * "PulseGeneratorBlock("
                 if Amplitude[Id] != ""
                     pulsetext = pulsetext * "amplitude=" * Amplitude[Id]
+                    if Period[Id] != "" || PulseWidth[Id] != "" || PhaseDelay[Id] != ""
+                        pulsetext = pulsetext * ", "
+                    end
                 end
                 if Period[Id] != ""
                     pulsetext = pulsetext * "period=" * Period[Id]
+                    if PulseWidth[Id] != "" || PhaseDelay[Id] != ""
+                        pulsetext = pulsetext * ", "
+                    end
                 end
                 if PulseWidth[Id] != ""
                     pulsetext = pulsetext * "pulsewidth=" * PulseWidth[Id]
+                    if PhaseDelay[Id] != ""
+                        pulsetext = pulsetext * ", "
+                    end
                 end
                 if PhaseDelay[Id] != ""
                     pulsetext = pulsetext * "phasedelay=" * PhaseDelay[Id]
@@ -390,6 +427,14 @@ module xmlToJulia
                     producttext = producttext * ProductChild[Id][i] * " "
                 end
                 push!(Blk, producttext)
+            end
+            if Type[Id] == "division"
+                divisiontext = BlockLabel[Id] * " = " * "DivisionBlock() "
+                for i in 1:2
+                    divisiontext = divisiontext * "inport[" * string(i) * "]:"
+                    divisiontext = divisiontext * DivisionChild[Id][i] * " "
+                end
+                push!(Blk, divisiontext)
             end
             if Type[Id] == "saturation"
                 saturationtext = BlockLabel[Id] * " = " * "SaturationBlock("
@@ -472,6 +517,7 @@ module xmlToJulia
         global Source = Dict()
         global AddChild = Dict()
         global ProductChild = Dict()
+        global DivisionChild = Dict()
         global parameter = Dict()
         global blk = Dict()
         global Inblk = Dict()
